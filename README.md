@@ -307,6 +307,6 @@ Released under the [MIT License](LICENSE). See `LICENSE` for details.
 **Qvengers** · Team ID `VTU-QFF-HC-0021` · Tier `Online`
 · Built with ⚛️ Qiskit for the VTU-QFF Hackathon
 
-[⬆ Back to Top](#Qvengers)
+[⬆ Back to Top](#qvengers)
 
 </div>
