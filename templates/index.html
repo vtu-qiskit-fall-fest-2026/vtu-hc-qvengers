@@ -1,0 +1,474 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Solver Selector</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #070b16;
+            --panel: rgba(17, 25, 47, 0.88);
+            --panel-light: #111b31;
+            --border: rgba(129, 140, 248, 0.22);
+            --cyan: #67e8f9;
+            --purple: #a78bfa;
+            --green: #34d399;
+            --text: #edf2ff;
+            --muted: #9aa9c5;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 32px 18px;
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            background:
+                radial-gradient(ellipse at 15% 0%, #17234b 0%, transparent 42%),
+                radial-gradient(ellipse at 90% 25%, #211343 0%, transparent 35%),
+                var(--bg);
+            color: var(--text);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.13;
+            background-image:
+                linear-gradient(rgba(103, 232, 249, 0.12) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(103, 232, 249, 0.12) 1px, transparent 1px);
+            background-size: 38px 38px;
+            mask-image: linear-gradient(to bottom, black, transparent 85%);
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1050px;
+            margin: auto;
+        }
+
+        .header {
+            text-align: center;
+            margin: 12px 0 32px;
+        }
+
+        .header h1 {
+            font-size: clamp(30px, 5vw, 48px);
+            letter-spacing: -1.5px;
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, #fff, var(--cyan), var(--purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .header p {
+            max-width: 680px;
+            margin: auto;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 26px;
+            margin-bottom: 22px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(14px);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 21px;
+            letter-spacing: 0.2px;
+        }
+
+        .card h3 {
+            margin-top: 22px;
+            color: var(--cyan);
+            font-size: 16px;
+        }
+
+        label {
+            display: block;
+            margin: 20px 0 9px;
+            font-size: 14px;
+            font-weight: 650;
+            color: #dce7ff;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid #354566;
+            background: #0a1122;
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.1);
+        }
+
+        button {
+            width: 100%;
+            margin-top: 26px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: linear-gradient(100deg, #67e8f9, #a78bfa);
+            color: #080d1c;
+            font-size: 15px;
+            font-weight: 750;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .result {
+            border-left: 3px solid var(--cyan);
+        }
+
+        .metric {
+            padding: 17px;
+            margin: 12px 0;
+            background: linear-gradient(135deg, rgba(10, 17, 34, 0.95), rgba(23, 32, 59, 0.8));
+            border: 1px solid rgba(129, 140, 248, 0.16);
+            border-radius: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        .metric strong {
+            color: var(--green);
+        }
+
+        .metric p {
+            line-height: 1.65;
+        }
+
+        .metric img {
+            border: 1px solid rgba(103, 232, 249, 0.18);
+        }
+
+        .tag {
+            color: var(--cyan);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+
+        .error {
+            color: #fca5a5;
+            border-color: rgba(248, 113, 113, 0.5);
+        }
+
+        .error h2 {
+            color: #fca5a5;
+        }
+
+        .result .metric:first-of-type {
+            border-color: rgba(103, 232, 249, 0.3);
+        }
+
+        @media (min-width: 760px) {
+            .card {
+                padding: 30px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            body {
+                padding: 20px 12px;
+            }
+
+            .card {
+                padding: 19px;
+                border-radius: 14px;
+            }
+
+            .header h1 {
+                letter-spacing: -0.8px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition: none !important;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+<div class="container">
+
+    <header class="header">
+        <h1>⚛️ Quantum Solver Selector</h1>
+        <p>
+            AI-powered runtime estimates and classical–quantum
+            solver comparison for the Max-Cut problem.
+        </p>
+    </header>
+
+    <section class="card">
+        <h2>Configure your graph</h2>
+
+        <form method="POST">
+            <label for="num_vertices">Number of vertices</label>
+            <input
+                id="num_vertices"
+                name="num_vertices"
+                type="number"
+                min="2"
+                max="100"
+                value="{{ request.form.get('num_vertices', '4') }}"
+                required
+            >
+
+            <label for="edges">Edges</label>
+            <input
+                id="edges"
+                name="edges"
+                type="text"
+                value="{{ request.form.get('edges', '0-1, 0-2, 1-2, 1-3, 2-3') }}"
+                placeholder="0-1, 0-2, 1-2"
+                required
+            >
+            <p class="hint">
+                Enter edges as vertex pairs separated by commas.
+                Example: 0-1, 0-2, 1-2. Vertex numbering starts at 0.
+            </p>
+
+            <label for="objective">What is your objective?</label>
+            <select id="objective" name="objective">
+                <option value="fastest"
+                    {% if request.form.get('objective', 'fastest') == 'fastest' %}selected{% endif %}>
+                    Fastest predicted solver (ML)
+                </option>
+                <option value="quality"
+                    {% if request.form.get('objective') == 'quality' %}selected{% endif %}>
+                    Guaranteed optimum (exact classical)
+                </option>
+                <option value="quantum"
+                    {% if request.form.get('objective') == 'quantum' %}selected{% endif %}>
+                    Explore QAOA simulation
+                </option>
+                <option value="compare"
+                    {% if request.form.get('objective') == 'compare' %}selected{% endif %}>
+                    Compare all solvers
+                </option>
+            </select>
+
+            <button type="submit">Analyze Graph</button>
+        </form>
+    </section>
+
+    {% if error %}
+    <section class="card error">
+        <h2>⚠️ Input error</h2>
+        <p>{{ error }}</p>
+    </section>
+    {% endif %}
+
+    {% if result %}
+    <section class="card result">
+        <h2>Analysis Results</h2>
+    
+    {% if result.graph_image %}
+        <div class="metric">
+            <h3>Graph Visualization</h3>
+
+            <img
+                src="data:image/png;base64,{{ result.graph_image }}"
+                alt="Max-Cut graph showing two partitions and cut edges"
+                style="
+                    display: block;
+                    width: 100%;
+                    max-width: 700px;
+                    height: auto;
+                    margin: 16px auto;
+                    border-radius: 12px;
+                "
+            >
+
+            <p class="hint">
+                Purple = Partition 0 · Green = Partition 1 ·
+                Orange edges = edges crossing the cut.
+            </p>
+        </div>
+        {% endif %}
+
+        {% if result.recommendation %}
+        <div class="metric">
+            <span class="tag">Recommended solver</span>
+            <h3>{{ result.recommendation }}</h3>
+            <p>{{ result.reason }}</p>
+        </div>
+        {% else %}
+        <p>{{ result.reason }}</p>
+        {% endif %}
+
+        {% if result.predicted_times %}
+        <h3>ML-predicted runtimes</h3>
+        {% for solver, runtime in result.predicted_times.items() %}
+        <div class="metric">
+            {{ solver }}: <strong>{{ "%.6f"|format(runtime) }} seconds</strong>
+        </div>
+        {% endfor %}
+        <p class="hint">
+            Predictions are based on a small benchmark dataset and
+            may be unreliable for graphs outside its training range.
+        </p>
+        {% endif %}
+
+        <div class="metric">
+            <h3>⚡ Measured Runtime Comparison</h3>
+            <p class="hint">
+                Actual execution time recorded for each solver in this run.
+            </p>
+            <div style="position: relative; height: 320px; width: 100%;">
+                <canvas id="runtimeChart"></canvas>
+            </div>
+        </div>
+
+
+        <h3>Solver results</h3>
+        {% for solver in result.results %}
+        <div class="metric">
+            <strong>{{ solver.algorithm }}</strong>
+            <p>Cut value: {{ solver.cut_value }}</p>
+            <p>Partition: {{ solver.partition }}</p>
+            <p>Measured runtime: {{ solver.runtime_seconds }} seconds</p>
+        </div>
+        {% endfor %}
+
+        <p class="hint">
+            QAOA currently runs on a classical statevector simulator;
+            this demo does not establish quantum speedup.
+        </p>
+    </section>
+    {% endif %}
+
+    <p class="hint" style="text-align:center">
+        Qvengers · Quantum + AI/ML · Max-Cut
+    </p>
+
+</div>
+</body>
+
+
+<script>
+    const runtimeCanvas = document.getElementById("runtimeChart");
+
+    if (runtimeCanvas && typeof Chart !== "undefined") {
+        const solverLabels = [
+            {% for solver in result.results %}
+                {{ solver.algorithm | tojson }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const runtimeValues = [
+            {% for solver in result.results %}
+                {{ solver.runtime_seconds | tojson }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        new Chart(runtimeCanvas, {
+            type: "bar",
+            data: {
+                labels: solverLabels,
+                datasets: [{
+                    label: "Measured runtime (seconds)",
+                    data: runtimeValues,
+                    backgroundColor: [
+                        "rgba(103, 232, 249, 0.8)",
+                        "rgba(167, 139, 250, 0.8)",
+                        "rgba(52, 211, 153, 0.8)"
+                    ],
+                    borderColor: [
+                        "#67e8f9",
+                        "#a78bfa",
+                        "#34d399"
+                    ],
+                    borderWidth: 1.5,
+                    borderRadius: 7,
+                    maxBarThickness: 80
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: "y",
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: "#edf2ff"
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return " " +
+                                    Number(context.raw).toFixed(6) +
+                                    " seconds";
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Runtime (seconds)",
+                            color: "#9aa9c5"
+                        },
+                        ticks: {
+                            color: "#9aa9c5"
+                        },
+                        grid: {
+                            color: "rgba(154, 169, 197, 0.12)"
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: "#edf2ff"
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+</body>
+
+</html>
